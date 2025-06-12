@@ -1,4 +1,4 @@
-// pages/api/generate.ts
+// /pages/api/generate.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -17,32 +17,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         prompt: prompt.trim(),
         n: 1,
-        size: "512x512"
-      })
+        size: "512x512",
+      }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("❌ ERROR DESDE OPENAI:");
-      console.error(JSON.stringify(data, null, 2));
-      return res.status(500).json({ error: "Error desde OpenAI", details: data });
+      console.error("❌ ERROR DESDE OPENAI:", data);
+      return res.status(500).json({ error: "Error al generar imagen", details: data });
     }
 
-    if (data?.data?.[0]?.url) {
-      return res.status(200).json({ url: data.data[0].url });
+    const imageUrl = data?.data?.[0]?.url;
+    if (imageUrl) {
+      return res.status(200).json({ url: imageUrl });
     } else {
       return res.status(500).json({ error: "No se recibió imagen válida" });
     }
   } catch (error) {
-    console.error("❌ ERROR DE CONEXIÓN:");
-    console.error(error);
-    return res.status(500).json({ error: "Error al conectar con OpenAI" });
+    console.error("❌ ERROR DE CONEXIÓN:", error);
+    return res.status(500).json({ error: "Error de servidor" });
   }
 }
 
