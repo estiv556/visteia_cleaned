@@ -1,95 +1,84 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
 export default function PromptForm() {
   const [prompt, setPrompt] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
+    if (!prompt.trim()) {
+      setError("Por favor escribe un prompt.");
+      return;
+    }
+
     setLoading(true);
-    setError("");
+    setError(null);
+    setImage(null);
 
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ prompt }),
       });
 
       const data = await response.json();
 
-      if (response.ok) {
-        setImageUrl(data.url);
+      if (response.ok && data.url) {
+        setImage(data.url);
       } else {
-        setError(data?.error || "No se pudo generar la imagen");
+        setError("No se pudo generar la imagen.");
+        console.error("Error en respuesta:", data);
       }
     } catch (err) {
-      console.error(err);
-      setError("Error de red");
+      setError("Error al conectar con el servidor.");
+      console.error("Error de conexión:", err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-4 py-8">
-      <div className="w-full max-w-4xl flex flex-col lg:flex-row items-center gap-10">
-        {/* Columna izquierda: formulario */}
-        <div className="w-full max-w-md">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            Describe tu diseño...
-          </h1>
+    <div className="max-w-xl mx-auto mt-8 p-4 bg-white rounded shadow">
+      <h1 className="text-2xl font-bold mb-4 text-center">
+        Diseña tu camiseta con IA
+      </h1>
 
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Ej: un gato astronauta en el espacio"
-            className="w-full border border-gray-300 rounded-md p-3 mb-4 resize-none"
-            rows={3}
+      <input
+        type="text"
+        name="prompt" // ✅ Esto soluciona la advertencia
+        placeholder="Describe tu diseño (ej. gato astronauta)"
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        className="w-full p-2 border rounded mb-4"
+        autoComplete="off"
+      />
+
+      <button
+        onClick={handleGenerate}
+        disabled={loading}
+        className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+      >
+        {loading ? "Generando..." : "Generar diseño"}
+      </button>
+
+      {error && (
+        <p className="text-red-600 mt-4 text-center">{error}</p>
+      )}
+
+      {image && (
+        <div className="mt-6">
+          <p className="text-center font-semibold mb-2">Vista previa:</p>
+          <img
+            src={image}
+            alt="Resultado generado por IA"
+            className="w-full rounded border"
           />
-
-          <button
-            onClick={handleGenerate}
-            disabled={loading || !prompt}
-            className="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-md hover:bg-blue-700 transition disabled:opacity-50"
-          >
-            {loading ? "Generando..." : "Generar camiseta"}
-          </button>
-
-          {error && (
-            <p className="text-sm text-red-600 mt-4">{error}</p>
-          )}
         </div>
-
-        {/* Columna derecha: vista previa */}
-        <div className="w-full max-w-sm flex flex-col items-center">
-          {imageUrl ? (
-            <>
-              <img
-                src={imageUrl}
-                alt="Diseño generado"
-                className="rounded-lg w-full h-auto border"
-              />
-              <div className="flex gap-4 mt-4">
-                <button
-                  onClick={handleGenerate}
-                  className="bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-md hover:bg-gray-100 transition"
-                >
-                  Regenerar
-                </button>
-                <button
-                  className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 transition"
-                >
-                  Agregar al carrito
-                </button>
-              </div>
-            </>
-          ) : (
-            <p className="text-gray-400 text-sm">La vista previa aparecerá aquí</p>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
