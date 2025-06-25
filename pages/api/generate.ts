@@ -18,6 +18,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "OpenAI-Organization": process.env.OPENAI_ORGANIZATION ?? "",
+        "OpenAI-Project": process.env.OPENAI_PROJECT_ID ?? ""
       },
       body: JSON.stringify({
         prompt: prompt.trim(),
@@ -44,6 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: "Error de servidor" });
   }
 }
+
 
 
 
